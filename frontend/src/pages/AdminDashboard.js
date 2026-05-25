@@ -5,6 +5,8 @@ import Reports from "./Reports";
 function AdminDashboard() {
   // ================= STATES =================
   const [user, setUser] = useState(null);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   const [students, setStudents] = useState([]);
   const [faculties, setFaculties] = useState([]);
@@ -39,15 +41,31 @@ function AdminDashboard() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored && !user) {
+      setUser(JSON.parse(stored));
+    }
+  }, []);
+
   // ================= FETCH =================
   const fetchStudents = async () => {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    const res = await axios.get("http://localhost:5000/students", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      if (!token) {
+        console.warn("AdminDashboard: no auth token available");
+        return;
+      }
 
-    setStudents(res.data);
+      const res = await axios.get("http://localhost:5000/students", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setStudents(res.data);
+    } catch (error) {
+      console.error("AdminDashboard fetchStudents failed", error);
+    }
   };
 
   const fetchFaculties = async () => {
@@ -62,18 +80,29 @@ function AdminDashboard() {
 
   // ================= CREATE STUDENT LOGIN =================
   const createStudent = async () => {
+    if (
+      !form.username ||
+      !form.password ||
+      !form.name ||
+      !form.rollNumber ||
+      !form.faculty ||
+      !form.semester
+    ) {
+      alert("Please fill in all student fields before creating.");
+      return;
+    }
+
     try {
       setCreatingStudent(true);
       setStudentCreated(false);
 
-      await axios.post(
+      const response = await axios.post(
         "http://localhost:5000/admin/create-student",
         form
       );
 
+      alert(response.data.message || "Student created successfully");
       setStudentCreated(true);
-
-      alert("Student created successfully");
 
       setForm({
         username: "",
@@ -84,11 +113,17 @@ function AdminDashboard() {
         semester: "",
       });
 
-      fetchStudents();
-
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchStudents();
+      }
     } catch (error) {
-      console.log(error);
-
+      console.error("Create student failed", error);
+      alert(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to create student"
+      );
     } finally {
       setCreatingStudent(false);
 
@@ -126,17 +161,46 @@ function AdminDashboard() {
 
   // ================= LOGIN =================
 if (!user) {
+  const handleAdminLogin = async () => {
+    try {
+      const res = await axios.post("http://localhost:5000/login", {
+        username: adminUsername,
+        password: adminPassword,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      setUser(res.data.user);
+      alert(res.data.message || "Login successful");
+    } catch (err) {
+      console.error("Admin login failed", err);
+      alert(err.response?.data?.message || "Login failed");
+    }
+  };
+
   return (
     <div style={styles.loginWrapper}>
       <div style={styles.loginCard}>
         <h1 style={styles.loginTitle}>Admin Login</h1>
 
-        <input style={styles.loginInput} placeholder="Username" />
-        <input style={styles.loginInput} type="password" placeholder="Password" />
+        <input
+          style={styles.loginInput}
+          placeholder="Username"
+          value={adminUsername}
+          onChange={(e) => setAdminUsername(e.target.value)}
+        />
+        <input
+          style={styles.loginInput}
+          type="password"
+          placeholder="Password"
+          value={adminPassword}
+          onChange={(e) => setAdminPassword(e.target.value)}
+        />
 
         <button
           style={styles.loginButton}
-          onClick={() => setUser({ name: "Admin" })}
+          onClick={handleAdminLogin}
         >
           Login
         </button>

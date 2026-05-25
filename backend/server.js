@@ -228,6 +228,13 @@ app.post("/attendance", async (req, res) => {
 
     res.json(attendance);
   } catch (error) {
+    if (error.code === 11000) {
+      const fields = Object.keys(error.keyPattern || {}).join(", ");
+      return res.status(400).json({
+        message: `${fields} already exists. Please choose a different value.`,
+      });
+    }
+
     res.status(500).json({ error: error.message });
   }
 });
@@ -505,8 +512,25 @@ app.post("/create-student-user", async (req, res) => {
 
 app.post("/admin/create-student", async (req, res) => {
   try {
-    const { username, password, name, rollNumber, faculty, semester } =
-      req.body;
+    console.log("[route] POST /admin/create-student called");
+    console.log("[route] body:", req.body);
+
+    try {
+      const { username, password, name, rollNumber, faculty, semester } =
+        req.body;
+
+    if (
+      !username ||
+      !password ||
+      !name ||
+      !rollNumber ||
+      !faculty ||
+      !semester
+    ) {
+      return res.status(400).json({
+        message: "All student creation fields are required.",
+      });
+    }
 
     // 1. create login user
     const user = await User.create({
@@ -530,7 +554,23 @@ app.post("/admin/create-student", async (req, res) => {
       student,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("[route] /admin/create-student error:", error);
+
+      if (error.code === 11000) {
+        const fields = Object.keys(error.keyPattern || {}).join(", ");
+        return res.status(400).json({
+          message: `${fields} already exists. Please choose a different value.`,
+        });
+      }
+
+      return res.status(500).json({
+        message: "Internal server error while creating student",
+        detail: error.message,
+      });
+  }
+  }catch(error){
+    console.log(error);
+    
   }
 });
 // =====================

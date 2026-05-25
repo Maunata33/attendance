@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 function ReportPage() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
 
   const [data, setData] = useState([]);
   const [faculties, setFaculties] = useState([]);
@@ -21,6 +22,11 @@ function ReportPage() {
 
   const fetchReport = async () => {
     try {
+      if (!user) {
+        console.warn("Reports: no logged-in user");
+        return;
+      }
+
       let url = "http://localhost:5000/report";
 
       const params = [];
@@ -48,6 +54,14 @@ function ReportPage() {
       console.log(error);
     }
   };
+
+  if (!user) {
+    return (
+      <div style={{ padding: "20px" }}>
+        <h2>Please login to view attendance reports</h2>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "20px" }}>

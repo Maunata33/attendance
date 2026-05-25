@@ -28,7 +28,7 @@ function Login() {
 
       if (user.role === "admin") navigate("/admin");
       else if (user.role === "teacher") navigate("/teacher");
-      else navigate("/StudentReport");
+      else navigate("/studentReport");
 
     } catch (error) {
       alert(error.response?.data?.message || "Login Failed");

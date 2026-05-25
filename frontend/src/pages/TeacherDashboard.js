@@ -33,6 +33,11 @@ function TeacherDashboard() {
   // =====================
   const fetchStudents = async () => {
     try {
+      if (!token) {
+        console.warn("TeacherDashboard: no auth token available");
+        return;
+      }
+
       const res = await axios.get("http://localhost:5000/students", {
         headers: {
           Authorization: `Bearer ${token}`,
