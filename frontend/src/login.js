@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 function Login() {
   const navigate = useNavigate();
@@ -9,6 +11,14 @@ function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") return;
+    setSnackbarOpen(false);
+  };
 
   const handleLogin = async () => {
     try {
@@ -22,7 +32,9 @@ function Login() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      alert(response.data.message);
+      setSnackbarSeverity("success");
+      setSnackbarMessage(response.data.message || "Login successful");
+      setSnackbarOpen(true);
 
       const user = response.data.user;
 
@@ -31,7 +43,9 @@ function Login() {
       else navigate("/studentReport");
 
     } catch (error) {
-      alert(error.response?.data?.message || "Login Failed");
+      setSnackbarSeverity("error");
+      setSnackbarMessage(error.response?.data?.message || "Login Failed");
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -120,9 +134,24 @@ function Login() {
         </button>
 
         <p style={{ fontSize: "12px", marginTop: "15px", color: "#888" }}>
-         Teacher • Student Login
+          Teacher • Student Login
         </p>
       </div>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
